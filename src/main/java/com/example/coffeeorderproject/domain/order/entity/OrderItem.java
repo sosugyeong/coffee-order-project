@@ -27,8 +27,8 @@ public class OrderItem {
     private Integer orderPrice; // 주문 시점의 가격
     private Integer count; // 주문 수량
 
-
+    //메뉴 금액
     public int getTotalPrice() {
-        return getOrderPrice() * getCount();
+        return this.orderPrice * this.count;
     }
 }
