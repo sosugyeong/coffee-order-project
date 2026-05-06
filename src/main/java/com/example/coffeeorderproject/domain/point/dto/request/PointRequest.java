@@ -4,7 +4,7 @@ import com.example.coffeeorderproject.domain.point.enums.PointType;
 
 public record PointRequest(
         String userIdentifier,
-        Long point,
+        Integer point,
         PointType type
 ) {
 }

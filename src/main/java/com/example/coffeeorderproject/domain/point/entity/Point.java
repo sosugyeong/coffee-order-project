@@ -22,7 +22,7 @@ public class Point extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    private Long point;
+    private Integer point;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -8,8 +8,8 @@ import lombok.Builder;
 @Builder
 public record PointResponse(
         String memberName,
-        Long point, //충전할 포인트
-        Long amount, //포인트 총액
+        Integer point, //충전할 포인트
+        Integer amount, //포인트 총액
         PointType type
 ) {
     public static PointResponse from(Member member, Point point){

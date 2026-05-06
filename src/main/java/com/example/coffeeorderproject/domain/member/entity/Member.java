@@ -28,10 +28,10 @@ public class Member extends BaseEntity {
     private String phoneNumber;
 
     @Builder.Default
-    private Long amount = 0L;
+    private Integer amount = 0;
 
     //포인트 충전
-    public void chargePoint(Long point){
+    public void chargePoint(Integer point){
         if(point <= 0){
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
@@ -39,7 +39,7 @@ public class Member extends BaseEntity {
     }
 
     //포인트 차감
-    public void usedPoint(Long point){
+    public void usedPoint(Integer point){
         if(point <= 0){
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
