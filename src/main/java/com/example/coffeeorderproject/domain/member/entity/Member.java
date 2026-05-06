@@ -28,24 +28,24 @@ public class Member extends BaseEntity {
     private String phoneNumber;
 
     @Builder.Default
-    private Long point = 0L;
+    private Long amount = 0L;
 
     //포인트 충전
-    public void chargePoint(Long amount){
-        if(amount <= 0){
+    public void chargePoint(Long point){
+        if(point <= 0){
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        this.point += amount;
+        this.amount += point;
     }
 
     //포인트 차감
-    public void usedPoint(Long amount){
-        if(amount <= 0){
+    public void usedPoint(Long point){
+        if(point <= 0){
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        if(this.point < amount){
+        if(this.amount < point){
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
-        this.point -= amount;
+        this.amount -= point;
     }
 }
