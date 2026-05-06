@@ -5,12 +5,12 @@ import com.example.coffeeorderproject.domain.menu.dto.response.MenuSearchConditi
 import com.example.coffeeorderproject.domain.menu.entity.Menu;
 import com.example.coffeeorderproject.domain.menu.enums.MenuCategory;
 import com.example.coffeeorderproject.domain.menu.enums.MenuStatus;
-import com.example.coffeeorderproject.domain.menu.enums.MenuTemperature;
 import com.example.coffeeorderproject.domain.menu.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +19,7 @@ public class MenuService {
     private final MenuRepository menuRepository;
 
     //커피 메뉴 조회
+    @Transactional(readOnly = true)
     public Page<MenuResponse> getMenuList(MenuSearchCondition cond, Pageable pageable){
         //필요시 기본 값 적용
         MenuSearchCondition searchCond = applyDefaultStatus(cond);
