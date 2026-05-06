@@ -20,6 +20,9 @@ public enum ErrorCode {
     // ===== POINT (P) =====
     INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "P001", "포인트 잔액이 충분하지 않습니다."),
 
+    // ===== ORDER (O) =====
+    ORDER_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "O001", "이미 완료된 주문입니다."),
+
     // ===== GLOBAL/COMMON (G) =====
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "G001", "입력값이 올바르지 않습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "G002", "접근 권한이 없습니다."),
