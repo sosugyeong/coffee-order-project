@@ -3,6 +3,8 @@ package com.example.coffeeorderproject.domain.order.entity;
 import com.example.coffeeorderproject.domain.member.entity.Member;
 import com.example.coffeeorderproject.domain.order.enums.OrderStatus;
 import com.example.coffeeorderproject.global.common.BaseEntity;
+import com.example.coffeeorderproject.global.exception.BusinessException;
+import com.example.coffeeorderproject.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,7 +37,19 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    //주문 생성지 총 금액 계산
+    //총 금액 계산
+    public void calculateTotalAmount(){
+        this.totalPrice = orderItems.stream()
+                .mapToInt(OrderItem::getTotalPrice)
+                .sum();
+    }
 
     //주문 상태 변경
+    public void updateStatus(OrderStatus nextStatus){
+        if(this.status == OrderStatus.COMPLETED){
+            throw new BusinessException(ErrorCode.ORDER_ALREADY_COMPLETED);
+        }
+        //현재 상태를 입력받은 상태로 변경
+        this.status = nextStatus;
+    }
 }
