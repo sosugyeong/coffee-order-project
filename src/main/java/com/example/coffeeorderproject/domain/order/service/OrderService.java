@@ -14,6 +14,7 @@ import com.example.coffeeorderproject.domain.order.enums.OrderStatus;
 import com.example.coffeeorderproject.domain.order.repository.OrderRepository;
 import com.example.coffeeorderproject.domain.ranking.dto.PaymentCompletedEvent;
 import com.example.coffeeorderproject.domain.ranking.producer.PaymentProducer;
+import com.example.coffeeorderproject.global.common.DistributedLockManager;
 import com.example.coffeeorderproject.global.exception.BusinessException;
 import com.example.coffeeorderproject.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,10 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final MenuRepository menuRepository;
     private final PaymentProducer paymentProducer;
+    private final DistributedLockManager lockManager;
+
+    // 결제 락 키 prefix: 사용자별 동시 결제 방지
+    private static final String PAYMENT_LOCK_KEY = "payment:lock:";
 
     @Transactional
     public OrderResponse orderCreate(OrderRequest request){
@@ -76,36 +81,41 @@ public class OrderService {
 
     @Transactional
     public PaymentResponse paymentCreate(PaymentRequest request){
-        Order order = orderRepository.findById(request.orderId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-        Member member = memberRepository.findByUserIdentifier(request.userIdentifier())
-                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        // userIdentifier 기반으로 사용자별 분산 락 적용 (동시 결제로 인한 포인트 이중 차감 방지)
+        String lockKey = PAYMENT_LOCK_KEY + request.userIdentifier();
 
-        if(!order.getMember().getId().equals(member.getId())){
-            throw new BusinessException(ErrorCode.UNAUTHORIZED_PAYMENT);
-        }
-        if (order.getStatus() == OrderStatus.COMPLETED){
-            throw new BusinessException(ErrorCode.ORDER_ALREADY_COMPLETED);
-        }
+        return lockManager.executeWithLock(lockKey, () -> {
+            Order order = orderRepository.findById(request.orderId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+            Member member = memberRepository.findByUserIdentifier(request.userIdentifier())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        //포인트 차감, 주문 상태 변경
-        member.usedPoint(order.getTotalPrice());
-        order.updateStatus(OrderStatus.COMPLETED);
+            if(!order.getMember().getId().equals(member.getId())){
+                throw new BusinessException(ErrorCode.UNAUTHORIZED_PAYMENT);
+            }
+            if (order.getStatus() == OrderStatus.COMPLETED){
+                throw new BusinessException(ErrorCode.ORDER_ALREADY_COMPLETED);
+            }
 
-        for(OrderItem item : order.getOrderItems()) {
-            PaymentCompletedEvent event = PaymentCompletedEvent.builder()
-                    .orderId(order.getId())
-                    .menuId(item.getMenu().getId())
-                    .memberId(member.getId())
-                    .quantity(item.getCount())
-                    .totalPrice(item.getOrderPrice() * item.getCount())
-                    .paidAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                    .build();
-            paymentProducer.send(event);
-        }
+            //포인트 차감, 주문 상태 변경
+            member.usedPoint(order.getTotalPrice());
+            order.updateStatus(OrderStatus.COMPLETED);
 
-        sendToDataPlatform(order);
-        return PaymentResponse.from(order, member);
+            for(OrderItem item : order.getOrderItems()) {
+                PaymentCompletedEvent event = PaymentCompletedEvent.builder()
+                        .orderId(order.getId())
+                        .menuId(item.getMenu().getId())
+                        .memberId(member.getId())
+                        .quantity(item.getCount())
+                        .totalPrice(item.getOrderPrice() * item.getCount())
+                        .paidAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                        .build();
+                paymentProducer.send(event);
+            }
+
+            sendToDataPlatform(order);
+            return PaymentResponse.from(order, member);
+        });
     }
 
     private void sendToDataPlatform(Order order){
