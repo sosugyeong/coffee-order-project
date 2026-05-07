@@ -1,3 +1,23 @@
 spring:
   application:
     name: coffee-order-project
+  datasource:
+    url: jdbc:mysql://localhost:3306/coffeshop
+    username: root
+    password: 12345678
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    jpa:
+      show-sql: true
+      hibernate:
+        ddl-auto: update
+      properties:
+        hibernate:
+          format_sql: true
+          default_batch_fetch_size: 100
+      defer-datasource-initialization: true
+    data:
+      redis:
+        port: 6379
+        host: localhost
+    kafka:
+      bootstrap-servers: localhost:9092,localhost:9093,localhost:9094
