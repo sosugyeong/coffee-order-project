@@ -41,7 +41,7 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> productRankingKafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> menuRankingKafkaListenerContainerFactory() {
 
         ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
 
