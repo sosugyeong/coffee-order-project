@@ -12,12 +12,16 @@ import com.example.coffeeorderproject.domain.order.entity.Order;
 import com.example.coffeeorderproject.domain.order.entity.OrderItem;
 import com.example.coffeeorderproject.domain.order.enums.OrderStatus;
 import com.example.coffeeorderproject.domain.order.repository.OrderRepository;
+import com.example.coffeeorderproject.domain.ranking.dto.PaymentCompletedEvent;
+import com.example.coffeeorderproject.domain.ranking.producer.PaymentProducer;
 import com.example.coffeeorderproject.global.exception.BusinessException;
 import com.example.coffeeorderproject.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +32,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MemberRepository memberRepository;
     private final MenuRepository menuRepository;
+    private final PaymentProducer paymentProducer;
 
     @Transactional
     public OrderResponse orderCreate(OrderRequest request){
@@ -86,6 +91,18 @@ public class OrderService {
         //포인트 차감, 주문 상태 변경
         member.usedPoint(order.getTotalPrice());
         order.updateStatus(OrderStatus.COMPLETED);
+
+        for(OrderItem item : order.getOrderItems()) {
+            PaymentCompletedEvent event = PaymentCompletedEvent.builder()
+                    .orderId(order.getId())
+                    .menuId(item.getMenu().getId())
+                    .memberId(member.getId())
+                    .quantity(item.getCount())
+                    .totalPrice(item.getOrderPrice() * item.getCount())
+                    .paidAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                    .build();
+            paymentProducer.send(event);
+        }
 
         sendToDataPlatform(order);
         return PaymentResponse.from(order, member);
