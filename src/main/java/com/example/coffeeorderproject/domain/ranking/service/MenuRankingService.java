@@ -26,6 +26,12 @@ public class MenuRankingService {
     public void increaseMenuRanking(long menuId, LocalDate currentDate) {
         String key = MENU_RANKING_DAILY_KEY + currentDate.toString();
         stringRedisTemplate.opsForZSet().incrementScore(key, String.valueOf(menuId), 1);
+
+        //TTL 확인
+        Long expire = stringRedisTemplate.getExpire(key);
+        if(expire != null && expire == -1L){
+            stringRedisTemplate.expire(key, Duration.ofDays(7));
+        }
     }
 
     public List<RankingDto> findMenuRankingTop3InToday() {
@@ -39,7 +45,7 @@ public class MenuRankingService {
         }
 
         //7일치 합산 키
-        String weeklyKey = "menu:ranking:weekly" + today.toString();
+        String weeklyKey = "menu:ranking:weekly:" + today.toString();
 
         //ZUNIONSTORE: 7일치 일별 sorted set을 합산
         stringRedisTemplate.opsForZSet().unionAndStore(dailyKeys[0],
@@ -47,6 +53,7 @@ public class MenuRankingService {
 
         //합산 키에 짧은 TTL 설정
        stringRedisTemplate.expire(weeklyKey, Duration.ofMinutes(5));
+
         //TOP3 조회
         Set<ZSetOperations.TypedTuple<String>> result = stringRedisTemplate.opsForZSet()
                 .reverseRangeWithScores(weeklyKey, 0, 2);
