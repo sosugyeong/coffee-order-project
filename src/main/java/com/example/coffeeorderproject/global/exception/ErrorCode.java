@@ -11,7 +11,7 @@ public enum ErrorCode {
     // ===== SERVER (S) =====
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"S001","서버 내부 오류가 발생했습니다."),
 
-    // ===== MENU (M1) =====
+    // ===== MEMBER (M1) =====
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M101", "존재하지 않는 유저입니다."),
 
     // ===== MENU (M) =====
@@ -22,6 +22,8 @@ public enum ErrorCode {
 
     // ===== ORDER (O) =====
     ORDER_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "O001", "이미 완료된 주문입니다."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "O002", "존재하지 않는 주문 정보입니다."),
+    UNAUTHORIZED_PAYMENT(HttpStatus.FORBIDDEN, "O003", "주문자 정보가 일치하지 않습니다."),
 
     // ===== GLOBAL/COMMON (G) =====
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "G001", "입력값이 올바르지 않습니다."),

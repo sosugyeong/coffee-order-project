@@ -5,7 +5,9 @@ import com.example.coffeeorderproject.domain.member.repository.MemberRepository;
 import com.example.coffeeorderproject.domain.menu.entity.Menu;
 import com.example.coffeeorderproject.domain.menu.repository.MenuRepository;
 import com.example.coffeeorderproject.domain.order.dto.request.OrderRequest;
+import com.example.coffeeorderproject.domain.order.dto.request.PaymentRequest;
 import com.example.coffeeorderproject.domain.order.dto.response.OrderResponse;
+import com.example.coffeeorderproject.domain.order.dto.response.PaymentResponse;
 import com.example.coffeeorderproject.domain.order.entity.Order;
 import com.example.coffeeorderproject.domain.order.entity.OrderItem;
 import com.example.coffeeorderproject.domain.order.enums.OrderStatus;
@@ -58,14 +60,35 @@ public class OrderService {
             order.getOrderItems().add(orderItem);
         }
 
-        //총 금액 계산, 포인트 차감
+        //총 금액 계산
         order.calculateTotalAmount();
-        member.usedPoint(order.getTotalPrice());
 
         Order savedOrder = orderRepository.save(order);
         sendToDataPlatform(order);
 
         return OrderResponse.from(savedOrder);
+    }
+
+    @Transactional
+    public PaymentResponse paymentCreate(PaymentRequest request){
+        Order order = orderRepository.findById(request.orderId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        Member member = memberRepository.findByUserIdentifier(request.userIdentifier())
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if(!order.getMember().getId().equals(member.getId())){
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_PAYMENT);
+        }
+        if (order.getStatus() == OrderStatus.COMPLETED){
+            throw new BusinessException(ErrorCode.ORDER_ALREADY_COMPLETED);
+        }
+
+        //포인트 차감, 주문 상태 변경
+        member.usedPoint(order.getTotalPrice());
+        order.updateStatus(OrderStatus.COMPLETED);
+
+        sendToDataPlatform(order);
+        return PaymentResponse.from(order, member);
     }
 
     private void sendToDataPlatform(Order order){

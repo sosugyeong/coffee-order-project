@@ -1,7 +1,9 @@
 package com.example.coffeeorderproject.domain.order.controller;
 
 import com.example.coffeeorderproject.domain.order.dto.request.OrderRequest;
+import com.example.coffeeorderproject.domain.order.dto.request.PaymentRequest;
 import com.example.coffeeorderproject.domain.order.dto.response.OrderResponse;
+import com.example.coffeeorderproject.domain.order.dto.response.PaymentResponse;
 import com.example.coffeeorderproject.domain.order.service.OrderService;
 import com.example.coffeeorderproject.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -30,4 +32,11 @@ public class OrderController {
     }
 
     //결제
+    @PostMapping("/payment")
+    public ResponseEntity<ApiResponse<PaymentResponse>> paymentCreate(
+            @RequestBody PaymentRequest request
+    ) {
+        PaymentResponse response = orderService.paymentCreate(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+    }
 }
