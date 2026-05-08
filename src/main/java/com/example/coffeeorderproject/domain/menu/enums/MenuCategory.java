@@ -6,13 +6,13 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum MenuCategory {
-    COFFEE("커피"),
-    DECAF("디카페인"),
-    NON_COFFEE("논커피"),
-    ADE("에이드/주스"),
-    SMOOTHIE("스무디/프라페"),
-    TEA("티"),
-    FOOD("푸드");
+    coffee("커피"),
+    decaf("디카페인"),
+    non_coffee("논커피"),
+    ade("에이드/주스"),
+    smoothie("스무디/프라페"),
+    tea("티"),
+    food("푸드");
 
     private final String description;
 }

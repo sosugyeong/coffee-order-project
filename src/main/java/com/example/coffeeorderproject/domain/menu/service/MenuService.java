@@ -38,7 +38,7 @@ public class MenuService {
         //미입력시 기본값 세팅
         if(cond.category() == null){
             return new MenuSearchCondition(
-                    MenuCategory.COFFEE,
+                    MenuCategory.coffee,
                     MenuStatus.SALE
             );
         }
