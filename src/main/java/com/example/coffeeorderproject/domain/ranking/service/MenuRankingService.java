@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public class MenuRankingService {
         //TTL 확인
         Long expire = stringRedisTemplate.getExpire(key);
         if(expire != null && expire == -1L){
-            stringRedisTemplate.expire(key, Duration.ofDays(7));
+            stringRedisTemplate.expire(key, 7, TimeUnit.DAYS);
         }
     }
 
@@ -52,7 +53,7 @@ public class MenuRankingService {
                 List.of(Arrays.copyOfRange(dailyKeys, 1, dailyKeys.length)), weeklyKey);
 
         //합산 키에 짧은 TTL 설정
-       stringRedisTemplate.expire(weeklyKey, Duration.ofMinutes(5));
+       stringRedisTemplate.expire(weeklyKey, 5, TimeUnit.MINUTES);
 
         //TOP3 조회
         Set<ZSetOperations.TypedTuple<String>> result = stringRedisTemplate.opsForZSet()
