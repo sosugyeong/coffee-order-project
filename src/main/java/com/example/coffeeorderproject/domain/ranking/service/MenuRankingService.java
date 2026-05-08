@@ -13,11 +13,9 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +33,7 @@ public class MenuRankingService {
                 () -> new BusinessException(ErrorCode.MENU_NOT_FOUND));
 
         String key = MENU_RANKING_DAILY_KEY + currentDate.toString();
-        stringRedisTemplate.opsForZSet().incrementScore(key, menu.getTitle(), 1);
+        stringRedisTemplate.opsForZSet().incrementScore(key, String.valueOf(menuId), 1);
 
         //TTL 확인
         Long expire = stringRedisTemplate.getExpire(key);
@@ -66,12 +64,25 @@ public class MenuRankingService {
         Set<ZSetOperations.TypedTuple<String>> result = stringRedisTemplate.opsForZSet()
                 .reverseRangeWithScores(weeklyKey, 0, 2);
 
-        if (result == null) {
+        if (result == null || result.isEmpty()) {
             return Collections.emptyList();
         }
 
+        //조회된 id 리스트 추출
+        List<Long> menuIds = result.stream().map(tuple -> Long.valueOf(tuple.getValue())).toList();
+
+        //db에서 조회
+        Map<Long, String> menuTitleMap = menuRepository.findAllById(menuIds).stream()
+                .collect(Collectors.toMap(Menu::getId, Menu::getTitle));
+
+        //메뉴명으로 변환해서 반환 시켜줌
         return result.stream()
-                .map(tuple -> new RankingDto(tuple.getValue(), tuple.getScore()))
+                .map(tuple -> {
+                    Long id = Long.valueOf(tuple.getValue());
+                    String title = menuTitleMap.getOrDefault(id, "empty title");
+
+                    return new RankingDto(title, tuple.getScore());
+                })
                 .toList();
     }
 }
