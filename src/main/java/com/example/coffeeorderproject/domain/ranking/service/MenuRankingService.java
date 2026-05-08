@@ -1,13 +1,17 @@
 package com.example.coffeeorderproject.domain.ranking.service;
 
+import com.example.coffeeorderproject.domain.menu.entity.Menu;
+import com.example.coffeeorderproject.domain.menu.repository.MenuRepository;
 import com.example.coffeeorderproject.domain.ranking.dto.RankingDto;
+import com.example.coffeeorderproject.global.exception.BusinessException;
+import com.example.coffeeorderproject.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,23 +26,26 @@ public class MenuRankingService {
 
     public static final String MENU_RANKING_DAILY_KEY = "menu:ranking:";
 
+    private final MenuRepository menuRepository;
     private final StringRedisTemplate stringRedisTemplate;
+    private final RedissonClient redissonClient;
 
     public void increaseMenuRanking(long menuId, LocalDate currentDate) {
+        Menu menu = menuRepository.findById(menuId).orElseThrow(
+                () -> new BusinessException(ErrorCode.MENU_NOT_FOUND));
+
         String key = MENU_RANKING_DAILY_KEY + currentDate.toString();
-        stringRedisTemplate.opsForZSet().incrementScore(key, String.valueOf(menuId), 1);
+        stringRedisTemplate.opsForZSet().incrementScore(key, menu.getTitle(), 1);
 
         //TTL 확인
         Long expire = stringRedisTemplate.getExpire(key);
         if(expire != null && expire == -1L){
-            stringRedisTemplate.expire(key, 7, TimeUnit.DAYS);
+            redissonClient.getBucket(key).expire(7, TimeUnit.DAYS);
         }
     }
 
     public List<RankingDto> findMenuRankingTop3InToday() {
-
         LocalDate today = LocalDate.now();
-
         //최근 7일간의 일별 키 목록 생성
         String[] dailyKeys = new String[7];
         for (int i = 0; i < 7; i++) {
@@ -53,7 +60,7 @@ public class MenuRankingService {
                 List.of(Arrays.copyOfRange(dailyKeys, 1, dailyKeys.length)), weeklyKey);
 
         //합산 키에 짧은 TTL 설정
-       stringRedisTemplate.expire(weeklyKey, 5, TimeUnit.MINUTES);
+       redissonClient.getBucket(weeklyKey).expire(5, TimeUnit.MINUTES);
 
         //TOP3 조회
         Set<ZSetOperations.TypedTuple<String>> result = stringRedisTemplate.opsForZSet()
