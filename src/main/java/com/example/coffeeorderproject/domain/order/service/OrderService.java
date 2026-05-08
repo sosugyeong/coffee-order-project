@@ -106,6 +106,7 @@ public class OrderService {
                         .orderId(order.getId())
                         .menuId(item.getMenu().getId())
                         .memberId(member.getId())
+                        .menuTitle(item.getMenu().getTitle())
                         .quantity(item.getCount())
                         .totalPrice(item.getOrderPrice() * item.getCount())
                         .paidAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))

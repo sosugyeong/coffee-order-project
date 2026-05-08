@@ -13,6 +13,7 @@ public class PaymentCompletedEvent {
     private Long orderId;
     private Long menuId;
     private Long memberId;
+    private String menuTitle;
     private Integer quantity;
     private Integer totalPrice;
     private String paidAt;
