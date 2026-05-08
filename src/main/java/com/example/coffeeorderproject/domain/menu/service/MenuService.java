@@ -36,12 +36,8 @@ public class MenuService {
 
     private MenuSearchCondition applyDefaultStatus(MenuSearchCondition cond){
         //미입력시 기본값 세팅
-        if(cond.category() == null){
-            return new MenuSearchCondition(
-                    MenuCategory.coffee,
-                    MenuStatus.SALE
-            );
-        }
-        return cond;
+        MenuCategory category = cond.category() != null ? cond.category() : MenuCategory.coffee;
+        MenuStatus status = cond.status() != null ? cond.status() : MenuStatus.SALE;
+        return new MenuSearchCondition(category, status);
     }
 }
