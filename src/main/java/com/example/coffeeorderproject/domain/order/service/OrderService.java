@@ -11,6 +11,7 @@ import com.example.coffeeorderproject.domain.order.dto.response.PaymentResponse;
 import com.example.coffeeorderproject.domain.order.entity.Order;
 import com.example.coffeeorderproject.domain.order.entity.OrderItem;
 import com.example.coffeeorderproject.domain.order.enums.OrderStatus;
+import com.example.coffeeorderproject.domain.order.manager.OrderPaymentManager;
 import com.example.coffeeorderproject.domain.order.repository.OrderRepository;
 import com.example.coffeeorderproject.domain.ranking.dto.PaymentCompletedEvent;
 import com.example.coffeeorderproject.domain.ranking.producer.PaymentProducer;
@@ -35,6 +36,7 @@ public class OrderService {
     private final MenuRepository menuRepository;
     private final PaymentProducer paymentProducer;
     private final DistributedLockManager lockManager;
+    private final OrderPaymentManager orderPaymentManager;
 
     // 결제 락 키 prefix: 사용자별 동시 결제 방지
     private static final String PAYMENT_LOCK_KEY = "payment:lock:";
@@ -85,37 +87,8 @@ public class OrderService {
         String lockKey = PAYMENT_LOCK_KEY + request.userIdentifier();
 
         return lockManager.executeWithLock(lockKey, () -> {
-            Order order = orderRepository.findById(request.orderId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-            Member member = memberRepository.findByUserIdentifier(request.userIdentifier())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-            if(!order.getMember().getId().equals(member.getId())){
-                throw new BusinessException(ErrorCode.UNAUTHORIZED_PAYMENT);
-            }
-            if (order.getStatus() == OrderStatus.COMPLETED){
-                throw new BusinessException(ErrorCode.ORDER_ALREADY_COMPLETED);
-            }
-
-            //포인트 차감, 주문 상태 변경
-            member.usedPoint(order.getTotalPrice());
-            order.updateStatus(OrderStatus.COMPLETED);
-
-            for(OrderItem item : order.getOrderItems()) {
-                PaymentCompletedEvent event = PaymentCompletedEvent.builder()
-                        .orderId(order.getId())
-                        .menuId(item.getMenu().getId())
-                        .memberId(member.getId())
-                        .menuTitle(item.getMenu().getTitle())
-                        .quantity(item.getCount())
-                        .totalPrice(item.getOrderPrice() * item.getCount())
-                        .paidAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                        .build();
-                paymentProducer.send(event);
-            }
-
-            sendToDataPlatform(order);
-            return PaymentResponse.from(order, member);
+            return orderPaymentManager.executePayment(request);
         });
     }
 
