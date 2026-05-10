@@ -3,6 +3,7 @@ package com.example.coffeeorderproject.domain.point.controller;
 import com.example.coffeeorderproject.domain.point.dto.request.PointRequest;
 import com.example.coffeeorderproject.domain.point.dto.response.PointResponse;
 import com.example.coffeeorderproject.domain.point.service.PointService;
+import com.example.coffeeorderproject.global.annotation.Idempotent;
 import com.example.coffeeorderproject.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class PointController {
 
     private final PointService pointService;
 
+    @Idempotent(ttlSeconds = 5)
     @PostMapping("/charge")
     public ResponseEntity<ApiResponse<PointResponse>> chargePoint(
             @Valid @RequestBody PointRequest request

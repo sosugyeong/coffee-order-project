@@ -5,6 +5,7 @@ import com.example.coffeeorderproject.domain.order.dto.request.PaymentRequest;
 import com.example.coffeeorderproject.domain.order.dto.response.OrderResponse;
 import com.example.coffeeorderproject.domain.order.dto.response.PaymentResponse;
 import com.example.coffeeorderproject.domain.order.service.OrderService;
+import com.example.coffeeorderproject.global.annotation.Idempotent;
 import com.example.coffeeorderproject.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class OrderController {
     private final OrderService orderService;
 
     //주문 생성
+    @Idempotent
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> orderCreate(
             @Valid @RequestBody OrderRequest request
@@ -32,6 +34,7 @@ public class OrderController {
     }
 
     //결제
+    @Idempotent
     @PostMapping("/payment")
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentCreate(
             @RequestBody PaymentRequest request
