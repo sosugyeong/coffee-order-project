@@ -81,7 +81,6 @@ public class OrderService {
         return OrderResponse.from(savedOrder);
     }
 
-    @Transactional
     public PaymentResponse paymentCreate(PaymentRequest request){
         // userIdentifier 기반으로 사용자별 분산 락 적용 (동시 결제로 인한 포인트 이중 차감 방지)
         String lockKey = PAYMENT_LOCK_KEY + request.userIdentifier();
